@@ -7,7 +7,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "mediabunny": "^1.2.0"
+    "mediabunny": "^1.2.0",
+    "webaudio-peaks": "^1.0.0"
   },
   "devDependencies": {
     "vite": "^5.0.0"

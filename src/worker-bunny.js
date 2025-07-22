@@ -1,4 +1,36 @@
-import { Input, ALL_FORMATS, BufferSource, EncodedPacketSink } from 'mediabunny';
+import {
+  Input,
+  ALL_FORMATS,
+  BufferSource,
+  EncodedPacketSink,
+} from "mediabunny";
+
+function output(audioData) {
+  const channels = audioData.numberOfChannels;
+  const frames = audioData.numberOfFrames;
+  const sampleRate = audioData.sampleRate;
+  const channelData = [];
+
+  if (audioData.format === "f32-planar") {
+    for (let ch = 0; ch < channels; ch++) {
+      const buf = new Float32Array(frames);
+      audioData.copyTo(buf, { planeIndex: ch });
+      channelData.push(buf);
+    }
+  }
+
+  // Send buffers to main thread
+  postMessage(
+    {
+      type: "audio-frame",
+      sampleRate,
+      numberOfChannels: channels,
+      numberOfFrames: frames,
+      channels: channelData.map((f32) => f32.buffer),
+    },
+    channelData.map((f32) => f32.buffer)
+  ); // Transfer ownership
+}
 
 self.onmessage = async (e) => {
   const buffer = e.data;
@@ -8,33 +40,35 @@ self.onmessage = async (e) => {
       formats: ALL_FORMATS,
       source: new BufferSource(buffer),
     });
-    
+
     const format = await input.getFormat(); // => Mp4InputFormat
-    console.log(format)
+    console.log(format);
     const mimeType = await input.getMimeType(); // => 'video/mp4; codecs="avc1.42c032, mp4a.40.2"'
-    console.log(mimeType)
+    console.log(mimeType);
     const duration = await input.computeDuration(); // => 1905.4615
-    console.log(duration)
+    console.log(duration);
+
+    postMessage({ type: "metadata", duration });
 
     const audioTrack = await input.getPrimaryAudioTrack(); // => InputAudioTrack | null
 
     const canDecode = await audioTrack.canDecode(); // => boolean
-    console.log(`Can decode ${canDecode}`)
+    console.log(`Can decode ${canDecode}`);
 
     // Get the number of audio channels:
-    console.log(`Number of channels ${audioTrack.numberOfChannels}`)
+    console.log(`Number of channels ${audioTrack.numberOfChannels}`);
 
     // Get the audio sample rate in hertz:
-    console.log(`sample rate ${audioTrack.sampleRate}`)
+    console.log(`sample rate ${audioTrack.sampleRate}`);
 
     const decoderConfig = await audioTrack.getDecoderConfig(); // => AudioDecoderConfig | null
 
-    console.log(decoderConfig)
+    console.log(decoderConfig);
 
     const sink = new EncodedPacketSink(audioTrack);
 
     const decoder = new AudioDecoder({
-      output: console.log,
+      output,
       error: console.error,
     });
     decoder.configure(decoderConfig);
@@ -46,9 +80,7 @@ self.onmessage = async (e) => {
     }
 
     await decoder.flush();
-
-
-    postMessage({duration});
+    postMessage({ type: "done" });
   } catch (err) {
     postMessage({ error: err.message });
   }
