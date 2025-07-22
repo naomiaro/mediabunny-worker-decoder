@@ -5,19 +5,103 @@ import {
   EncodedPacketSink,
 } from "mediabunny";
 
-function output(audioData) {
-  const channels = audioData.numberOfChannels;
-  const frames = audioData.numberOfFrames;
-  const sampleRate = audioData.sampleRate;
+/**
+ * Converts AudioData (any known format) to an array of Float32Arrays (one per channel).
+ * Handles both interleaved and planar formats.
+ *
+ * @param {AudioData} audioData
+ * @returns {Float32Array[]} channelData - array of Float32Array per channel
+ */
+function convertAudioDataToFloat32Arrays(audioData) {
+  const {
+    format,
+    numberOfChannels: channels,
+    numberOfFrames: frames,
+  } = audioData;
   const channelData = [];
 
-  if (audioData.format === "f32-planar") {
+  const normalize = {
+    s16: (x) => x / 32768,
+    u8: (x) => (x - 128) / 128,
+  };
+
+  if (format === "f32-planar") {
     for (let ch = 0; ch < channels; ch++) {
       const buf = new Float32Array(frames);
       audioData.copyTo(buf, { planeIndex: ch });
       channelData.push(buf);
     }
+  } else if (format === "s16-planar") {
+    for (let ch = 0; ch < channels; ch++) {
+      const intBuf = new Int16Array(frames);
+      audioData.copyTo(intBuf, { planeIndex: ch });
+
+      const floatBuf = new Float32Array(frames);
+      for (let i = 0; i < frames; i++) {
+        floatBuf[i] = normalize.s16(intBuf[i]);
+      }
+      channelData.push(floatBuf);
+    }
+  } else if (format === "u8-planar") {
+    for (let ch = 0; ch < channels; ch++) {
+      const u8Buf = new Uint8Array(frames);
+      audioData.copyTo(u8Buf, { planeIndex: ch });
+
+      const floatBuf = new Float32Array(frames);
+      for (let i = 0; i < frames; i++) {
+        floatBuf[i] = normalize.u8(u8Buf[i]);
+      }
+      channelData.push(floatBuf);
+    }
+  } else if (format === "f32") {
+    const interleaved = new Float32Array(frames * channels);
+    audioData.copyTo(interleaved);
+
+    for (let ch = 0; ch < channels; ch++) {
+      const chBuf = new Float32Array(frames);
+      for (let i = 0; i < frames; i++) {
+        chBuf[i] = interleaved[i * channels + ch];
+      }
+      channelData.push(chBuf);
+    }
+  } else if (format === "s16") {
+    const interleaved = new Int16Array(frames * channels);
+    audioData.copyTo(interleaved);
+
+    for (let ch = 0; ch < channels; ch++) {
+      const chBuf = new Float32Array(frames);
+      for (let i = 0; i < frames; i++) {
+        const sample = interleaved[i * channels + ch];
+        chBuf[i] = normalize.s16(sample);
+      }
+      channelData.push(chBuf);
+    }
+  } else if (format === "u8") {
+    const interleaved = new Uint8Array(frames * channels);
+    audioData.copyTo(interleaved);
+
+    for (let ch = 0; ch < channels; ch++) {
+      const chBuf = new Float32Array(frames);
+      for (let i = 0; i < frames; i++) {
+        const sample = interleaved[i * channels + ch];
+        chBuf[i] = normalize.u8(sample);
+      }
+      channelData.push(chBuf);
+    }
+  } else {
+    throw new Error(`Unsupported AudioData format: ${format}`);
   }
+
+  return channelData;
+}
+
+function output(audioData) {
+  console.log(audioData);
+  const channels = audioData.numberOfChannels;
+  const frames = audioData.numberOfFrames;
+  const sampleRate = audioData.sampleRate;
+
+  const channelData = convertAudioDataToFloat32Arrays(audioData);
 
   // Send buffers to main thread
   postMessage(
@@ -73,13 +157,17 @@ self.onmessage = async (e) => {
     });
     decoder.configure(decoderConfig);
 
-    let currentPacket = await sink.getKeyPacket(0);
-    while (currentPacket && currentPacket.timestamp < duration) {
+    const start = performance.now();
+
+    let currentPacket = await sink.getFirstPacket();
+    while (currentPacket) {
       decoder.decode(currentPacket.toEncodedAudioChunk());
       currentPacket = await sink.getNextPacket(currentPacket);
     }
 
     await decoder.flush();
+    const end = performance.now();
+    console.log(end - start);
     postMessage({ type: "done" });
   } catch (err) {
     postMessage({ error: err.message });

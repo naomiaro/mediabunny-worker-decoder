@@ -1,8 +1,9 @@
 import WorkerBunny from "./worker-bunny?worker";
-import WorkerPeaks from "./worker-peaks?worker";
+import extractPeaks from "webaudio-peaks";
+// import WorkerPeaks from "./worker-peaks?worker";
 
 const workerBunny = new WorkerBunny();
-const workerPeaks = new WorkerPeaks();
+// const workerPeaks = new WorkerPeaks();
 
 const input = document.createElement("input");
 input.type = "file";
@@ -21,6 +22,7 @@ workerBunny.onmessage = (e) => {
 
   if (e.data.type === "done") {
     const buffer = createAudioBufferFromFrames(ctx, frameQueue);
+    const peaks = extractPeaks(buffer, 10000, true);
 
     const source = ctx.createBufferSource();
     source.buffer = buffer;
