@@ -95,3 +95,24 @@ function convertAudioDataToInterleavedFloat32(audioData) {
 
   return interleaved;
 }
+
+/*
+	Creates a new buffer of exactly validFrames
+	Copies only the decoded portion from the big buffer
+	Ensures no trailing silence or junk gets replayed
+*/
+function trimAudioBuffer(buffer, numberOfChannels, validFrames) {
+  if (buffer.length === validFrames) return buffer;
+
+  const trimmed = ctx.createBuffer(
+    numberOfChannels,
+    validFrames,
+    buffer.sampleRate
+  );
+  for (let ch = 0; ch < numberOfChannels; ch++) {
+    const tmp = new Float32Array(validFrames);
+    buffer.copyFromChannel(tmp, ch, 0);
+    trimmed.copyToChannel(tmp, ch, 0);
+  }
+  return trimmed;
+}
