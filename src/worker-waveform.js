@@ -18,7 +18,7 @@ self.onmessage = (e) => {
     const samples = new Float32Array(e.data.data);
     const startSample = e.data.offset;
     updatePeaks(samples, startSample);
-    drawWaveform();
+    maybeDrawWaveform();
   }
 };
 
@@ -47,4 +47,15 @@ function drawWaveform() {
   }
   ctx.strokeStyle = "#4e8";
   ctx.stroke();
+}
+
+let lastDraw = 0;
+const DRAW_INTERVAL = 16; // ~60 FPS
+
+function maybeDrawWaveform() {
+  const now = performance.now();
+  if (now - lastDraw >= DRAW_INTERVAL) {
+    drawWaveform();
+    lastDraw = now;
+  }
 }
