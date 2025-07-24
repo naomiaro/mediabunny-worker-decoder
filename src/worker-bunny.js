@@ -203,8 +203,6 @@ self.onmessage = async (e) => {
     const duration = await input.computeDuration(); // => 1905.4615
     console.log(duration);
 
-    postMessage({ type: "metadata", duration });
-
     const audioTrack = await input.getPrimaryAudioTrack(); // => InputAudioTrack | null
 
     const canDecode = await audioTrack.canDecode(); // => boolean
@@ -215,6 +213,13 @@ self.onmessage = async (e) => {
 
     // Get the audio sample rate in hertz:
     console.log(`sample rate ${audioTrack.sampleRate}`);
+
+    postMessage({
+      type: "metadata",
+      duration,
+      sampleRate: audioTrack.sampleRate,
+      numberOfChannels: audioTrack.numberOfChannels,
+    });
 
     const decoderConfig = await audioTrack.getDecoderConfig(); // => AudioDecoderConfig | null
 
