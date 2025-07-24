@@ -62,14 +62,21 @@ workerBunny.onmessage = (e) => {
     player.loadBuffer(audioBuffer);
 
     const samplesPerPixel = 10000;
-    canvas.width = Math.ceil(expectedFrames / samplesPerPixel);
+    const ratio = window.devicePixelRatio || 1;
+    const canvasWidth = Math.ceil(expectedFrames / samplesPerPixel);
+    const canvasHeight = 100;
+
+    canvas.width = canvasWidth * ratio;
+    canvas.height = canvasHeight * ratio;
+    canvas.style.width = `${canvasWidth}px`;
+    canvas.style.height = `${canvasHeight}px`;
 
     const offscreen = canvas.transferControlToOffscreen();
     waveformWorker.postMessage(
       {
         type: "init",
         canvas: offscreen,
-        sampleRate,
+        devicePixelRatio: ratio,
         samplesPerPixel,
       },
       [offscreen]

@@ -1,15 +1,19 @@
 let ctx, width, height;
 let samplesPerPixel;
 let peaks;
+let devicePixelRatio = 1;
 
 self.onmessage = (e) => {
   if (e.data.type === "init") {
-    const { canvas, samplesPerPixel: spp } = e.data;
+    const { canvas, samplesPerPixel: spp, devicePixelRatio: dpr = 1 } = e.data;
     samplesPerPixel = spp;
+    devicePixelRatio = dpr;
 
     ctx = canvas.getContext("2d");
-    width = canvas.width;
-    height = canvas.height;
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+
+    width = canvas.width / devicePixelRatio;
+    height = canvas.height / devicePixelRatio;
     peaks = new Array(width).fill([0, 0]);
     ctx.clearRect(0, 0, width, height);
   }
