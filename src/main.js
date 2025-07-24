@@ -7,6 +7,18 @@ const input = document.createElement("input");
 input.type = "file";
 document.body.appendChild(input);
 
+const playBtn = document.createElement("button");
+playBtn.textContent = "▶️ Play/Pause";
+playBtn.disabled = true;
+playBtn.onclick = () => player.toggle();
+document.body.appendChild(playBtn);
+
+const stopBtn = document.createElement("button");
+stopBtn.textContent = "⏹ Stop";
+stopBtn.disabled = true;
+stopBtn.onclick = () => player.stop();
+document.body.appendChild(stopBtn);
+
 const ctx = new AudioContext();
 const player = new AudioBufferPlayer(ctx);
 
@@ -57,34 +69,18 @@ workerBunny.onmessage = (e) => {
     // check if buffer might underun soon.
     availableSeconds = writeOffset / sampleRate;
 
-    if (!isInitialised && availableSeconds > minStartSeconds) {
-      const playBtn = document.createElement("button");
-      playBtn.textContent = "▶️ Play/Pause";
-      playBtn.onclick = () => player.toggle();
-      document.body.appendChild(playBtn);
-
-      const stopBtn = document.createElement("button");
-      stopBtn.textContent = "⏹ Stop";
-      stopBtn.onclick = () => player.stop();
-      document.body.appendChild(stopBtn);
-
+    if (!isInitialised) {
+      playBtn.disabled = false;
+      stopBtn.disabled = false;
       isInitialised = true;
     }
 
     if (player.shouldRestartSoon(availableSeconds)) {
-      console.log(`Available seconds ${availableSeconds}`);
-      console.log("player should restart");
       const currentTime = player.getPlaybackPosition();
 
       player.stop();
       player.pausedAt = currentTime; // resume at current time
       player.play();
-
-      console.log(
-        "🔁 Restarted with updated buffer at",
-        currentTime.toFixed(2),
-        "seconds"
-      );
     }
   }
 
