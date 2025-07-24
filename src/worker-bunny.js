@@ -172,7 +172,7 @@ self.onmessage = async (e) => {
 
     await decoder.flush();
     const end = performance.now();
-    console.log(end - start);
+    console.log(`Decoding took: ${end - start} seconds`);
     postMessage({ type: "done" });
   } catch (err) {
     postMessage({ error: err.message });
