@@ -8,8 +8,10 @@ self.onmessage = (e) => {
     samplesPerPixel = spp;
 
     ctx = canvas.getContext("2d");
-    peaks = new Array(canvas.width).fill([0, 0]);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    width = canvas.width;
+    height = canvas.height;
+    peaks = new Array(width).fill([0, 0]);
+    ctx.clearRect(0, 0, width, height);
   }
 
   if (e.data.type === "frame") {
@@ -21,13 +23,11 @@ self.onmessage = (e) => {
 };
 
 function updatePeaks(samples, offset) {
-  //console.log(`updatePeaks with offset ${offset}`);
-  //console.log(samples.length);
   for (let i = 0; i < samples.length; i++) {
     const globalSampleIndex = offset + i;
-    // console.log(`globalSampleIndex ${globalSampleIndex}`);
+
+    // move left through array as frames roll in. compare to previously saved min, max
     const pixelX = Math.floor(globalSampleIndex / samplesPerPixel);
-    // console.log(`pixelX ${pixelX}`);
     if (pixelX >= peaks.length) continue;
 
     const [min, max] = peaks[pixelX];
@@ -37,8 +37,6 @@ function updatePeaks(samples, offset) {
 }
 
 function drawWaveform() {
-  console.log("drawing");
-  console.log(peaks);
   const mid = height / 2;
   ctx.clearRect(0, 0, width, height);
   ctx.beginPath();

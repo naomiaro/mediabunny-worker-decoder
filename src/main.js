@@ -61,7 +61,7 @@ workerBunny.onmessage = (e) => {
 
     player.loadBuffer(audioBuffer);
 
-    const samplesPerPixel = 2048;
+    const samplesPerPixel = 10000;
     canvas.width = Math.ceil(expectedFrames / samplesPerPixel);
 
     const offscreen = canvas.transferControlToOffscreen();
