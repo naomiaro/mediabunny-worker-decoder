@@ -14,6 +14,22 @@ export class AudioBufferPlayer {
     this.isPlaying = false;
   }
 
+  getPlaybackPosition() {
+    return this.isPlaying
+      ? this.ctx.currentTime - this.startTime
+      : this.pausedAt;
+  }
+
+  /*
+    availableSeconds     How much audio has been decoded so far (writeOffset / sampleRate)
+    padding              How soon before underrun you want to trigger (e.g. 0.5s)
+  */
+  shouldRestartSoon(availableSeconds, padding = 0.5) {
+    if (!this.isPlaying) return false;
+    const played = this.getPlaybackPosition();
+    return availableSeconds - played < padding;
+  }
+
   play() {
     if (!this.buffer || this.isPlaying) return;
 

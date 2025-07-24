@@ -96,7 +96,7 @@ function convertAudioDataToFloat32Arrays(audioData) {
 }
 
 function output(audioData) {
-  console.log(audioData);
+  // console.log(audioData);
   const channels = audioData.numberOfChannels;
   const frames = audioData.numberOfFrames;
   const sampleRate = audioData.sampleRate;
