@@ -51,6 +51,16 @@ workerBunny.onmessage = (e) => {
   if (e.data.type === "done") {
     player.loadBuffer(audioBuffer);
     player.play();
+
+    const playBtn = document.createElement("button");
+    playBtn.textContent = "▶️ Play/Pause";
+    playBtn.onclick = () => player.toggle();
+    document.body.appendChild(playBtn);
+
+    const stopBtn = document.createElement("button");
+    stopBtn.textContent = "⏹ Stop";
+    stopBtn.onclick = () => player.stop();
+    document.body.appendChild(stopBtn);
   }
 };
 
