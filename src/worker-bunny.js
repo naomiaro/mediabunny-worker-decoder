@@ -6,77 +6,6 @@ import {
 } from "mediabunny";
 
 /**
- * Converts AudioData to a single interleaved Float32Array.
- * Supports f32, s16, u8 (interleaved or planar).
- *
- * @param {AudioData} audioData
- * @returns {Float32Array} interleavedSamples
- */
-function convertAudioDataToInterleavedFloat32(audioData) {
-  const {
-    format,
-    numberOfChannels: channels,
-    numberOfFrames: frames,
-  } = audioData;
-  const interleaved = new Float32Array(frames * channels);
-
-  const normalize = {
-    s16: (x) => x / 32768,
-    u8: (x) => (x - 128) / 128,
-  };
-
-  if (format === "f32") {
-    audioData.copyTo(interleaved);
-  } else if (format === "s16") {
-    const int = new Int16Array(frames * channels);
-    audioData.copyTo(int);
-    for (let i = 0; i < int.length; i++) {
-      interleaved[i] = normalize.s16(int[i]);
-    }
-  } else if (format === "u8") {
-    const u8 = new Uint8Array(frames * channels);
-    audioData.copyTo(u8);
-    for (let i = 0; i < u8.length; i++) {
-      interleaved[i] = normalize.u8(u8[i]);
-    }
-  } else if (format.endsWith("-planar")) {
-    // Planar formats: collect per-channel and interleave manually
-    for (let ch = 0; ch < channels; ch++) {
-      let source;
-
-      if (format === "f32-planar") {
-        source = new Float32Array(frames);
-        audioData.copyTo(source, { planeIndex: ch });
-      } else if (format === "s16-planar") {
-        const intBuf = new Int16Array(frames);
-        audioData.copyTo(intBuf, { planeIndex: ch });
-        source = new Float32Array(frames);
-        for (let i = 0; i < frames; i++) {
-          source[i] = normalize.s16(intBuf[i]);
-        }
-      } else if (format === "u8-planar") {
-        const u8Buf = new Uint8Array(frames);
-        audioData.copyTo(u8Buf, { planeIndex: ch });
-        source = new Float32Array(frames);
-        for (let i = 0; i < frames; i++) {
-          source[i] = normalize.u8(u8Buf[i]);
-        }
-      } else {
-        throw new Error(`Unsupported format: ${format}`);
-      }
-
-      for (let i = 0; i < frames; i++) {
-        interleaved[i * channels + ch] = source[i];
-      }
-    }
-  } else {
-    throw new Error(`Unsupported AudioData format: ${format}`);
-  }
-
-  return interleaved;
-}
-
-/**
  * Converts AudioData (any known format) to an array of Float32Arrays (one per channel).
  * Handles both interleaved and planar formats.
  *
@@ -167,7 +96,7 @@ function convertAudioDataToFloat32Arrays(audioData) {
 }
 
 function output(audioData) {
-  console.log(audioData);
+  // console.log(audioData);
   const channels = audioData.numberOfChannels;
   const frames = audioData.numberOfFrames;
   const sampleRate = audioData.sampleRate;
@@ -203,8 +132,6 @@ self.onmessage = async (e) => {
     const duration = await input.computeDuration(); // => 1905.4615
     console.log(duration);
 
-    postMessage({ type: "metadata", duration });
-
     const audioTrack = await input.getPrimaryAudioTrack(); // => InputAudioTrack | null
 
     const canDecode = await audioTrack.canDecode(); // => boolean
@@ -215,6 +142,13 @@ self.onmessage = async (e) => {
 
     // Get the audio sample rate in hertz:
     console.log(`sample rate ${audioTrack.sampleRate}`);
+
+    postMessage({
+      type: "metadata",
+      duration,
+      sampleRate: audioTrack.sampleRate,
+      numberOfChannels: audioTrack.numberOfChannels,
+    });
 
     const decoderConfig = await audioTrack.getDecoderConfig(); // => AudioDecoderConfig | null
 
