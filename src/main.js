@@ -1,4 +1,5 @@
 import WorkerBunny from "./worker-bunny?worker";
+import { AudioBufferPlayer } from "./AudioBufferPlayer.js";
 
 const workerBunny = new WorkerBunny();
 
@@ -7,6 +8,7 @@ input.type = "file";
 document.body.appendChild(input);
 
 const ctx = new AudioContext();
+const player = new AudioBufferPlayer(ctx);
 
 // for dynamic append
 let audioBuffer = null;
@@ -47,10 +49,8 @@ workerBunny.onmessage = (e) => {
   }
 
   if (e.data.type === "done") {
-    const source = ctx.createBufferSource();
-    source.buffer = audioBuffer;
-    source.connect(ctx.destination);
-    source.start();
+    player.loadBuffer(audioBuffer);
+    player.play();
   }
 };
 
