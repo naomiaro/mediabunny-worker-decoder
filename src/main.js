@@ -19,7 +19,7 @@ let expectedFrames = null;
 let availableSeconds = 0;
 
 // how much decoded audio to wait for
-const minStartSeconds = 0.5;
+const minStartSeconds = 0;
 let isInitialised = false;
 
 workerBunny.onmessage = (e) => {
