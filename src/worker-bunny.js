@@ -96,7 +96,6 @@ function convertAudioDataToFloat32Arrays(audioData) {
 }
 
 function output(audioData) {
-  // console.log(audioData);
   const channels = audioData.numberOfChannels;
   const frames = audioData.numberOfFrames;
   const sampleRate = audioData.sampleRate;
@@ -125,23 +124,19 @@ self.onmessage = async (e) => {
       source: new BufferSource(buffer),
     });
 
-    const format = await input.getFormat(); // => Mp4InputFormat
-    console.log(format);
-    const mimeType = await input.getMimeType(); // => 'video/mp4; codecs="avc1.42c032, mp4a.40.2"'
-    console.log(mimeType);
+    // const format = await input.getFormat(); // => Mp4InputFormat
+    // console.log(format);
+    // const mimeType = await input.getMimeType(); // => 'video/mp4; codecs="avc1.42c032, mp4a.40.2"'
+    // console.log(mimeType);
+
     const duration = await input.computeDuration(); // => 1905.4615
-    console.log(duration);
-
     const audioTrack = await input.getPrimaryAudioTrack(); // => InputAudioTrack | null
-
     const canDecode = await audioTrack.canDecode(); // => boolean
     console.log(`Can decode ${canDecode}`);
 
-    // Get the number of audio channels:
-    console.log(`Number of channels ${audioTrack.numberOfChannels}`);
-
-    // Get the audio sample rate in hertz:
-    console.log(`sample rate ${audioTrack.sampleRate}`);
+    if (canDecode === false) {
+      throw new Error("Can't decode audio with mediabunny");
+    }
 
     postMessage({
       type: "metadata",
@@ -151,11 +146,7 @@ self.onmessage = async (e) => {
     });
 
     const decoderConfig = await audioTrack.getDecoderConfig(); // => AudioDecoderConfig | null
-
-    console.log(decoderConfig);
-
     const sink = new EncodedPacketSink(audioTrack);
-
     const decoder = new AudioDecoder({
       output,
       error: console.error,
@@ -163,7 +154,6 @@ self.onmessage = async (e) => {
     decoder.configure(decoderConfig);
 
     const start = performance.now();
-
     let currentPacket = await sink.getFirstPacket();
     while (currentPacket) {
       decoder.decode(currentPacket.toEncodedAudioChunk());
@@ -173,6 +163,7 @@ self.onmessage = async (e) => {
     await decoder.flush();
     const end = performance.now();
     console.log(`Decoding took: ${end - start} seconds`);
+
     postMessage({ type: "done" });
   } catch (err) {
     postMessage({ error: err.message });
