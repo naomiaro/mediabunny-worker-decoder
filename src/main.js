@@ -9,22 +9,13 @@ const input = document.createElement("input");
 input.type = "file";
 document.body.appendChild(input);
 
-const canvas = document.createElement("canvas");
-canvas.width = 500;
-canvas.height = 100;
-document.body.appendChild(canvas);
+const canvas = document.getElementById("waveform");
 
-const playBtn = document.createElement("button");
-playBtn.textContent = "▶️ Play/Pause";
-playBtn.disabled = true;
+const playBtn = document.getElementById("play");
 playBtn.onclick = () => player.toggle();
-document.body.appendChild(playBtn);
 
-const stopBtn = document.createElement("button");
-stopBtn.textContent = "⏹ Stop";
-stopBtn.disabled = true;
+const stopBtn = document.getElementById("stop");
 stopBtn.onclick = () => player.stop();
-document.body.appendChild(stopBtn);
 
 const ctx = new AudioContext();
 const player = new AudioBufferPlayer(ctx);
@@ -61,10 +52,10 @@ workerBunny.onmessage = (e) => {
 
     player.loadBuffer(audioBuffer);
 
-    const samplesPerPixel = 10000;
+    const samplesPerPixel = 30000;
     const ratio = window.devicePixelRatio || 1;
     const canvasWidth = Math.ceil(expectedFrames / samplesPerPixel);
-    const canvasHeight = 100;
+    const canvasHeight = 80;
 
     canvas.width = canvasWidth * ratio;
     canvas.height = canvasHeight * ratio;
