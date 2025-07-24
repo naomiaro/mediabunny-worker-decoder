@@ -1,11 +1,18 @@
 import WorkerBunny from "./worker-bunny?worker";
+import WaveformWorker from "./worker-waveform.js?worker";
 import { AudioBufferPlayer } from "./AudioBufferPlayer.js";
 
 const workerBunny = new WorkerBunny();
+const waveformWorker = new WaveformWorker();
 
 const input = document.createElement("input");
 input.type = "file";
 document.body.appendChild(input);
+
+const canvas = document.createElement("canvas");
+canvas.width = 500;
+canvas.height = 100;
+document.body.appendChild(canvas);
 
 const playBtn = document.createElement("button");
 playBtn.textContent = "▶️ Play/Pause";
@@ -53,6 +60,20 @@ workerBunny.onmessage = (e) => {
     console.log("Created AudioBuffer with", frames, "frames");
 
     player.loadBuffer(audioBuffer);
+
+    const samplesPerPixel = 2048;
+    canvas.width = Math.ceil(expectedFrames / samplesPerPixel);
+
+    const offscreen = canvas.transferControlToOffscreen();
+    waveformWorker.postMessage(
+      {
+        type: "init",
+        canvas: offscreen,
+        sampleRate,
+        samplesPerPixel,
+      },
+      [offscreen]
+    );
   }
 
   if (e.data.type === "audio-frame") {
@@ -62,6 +83,18 @@ workerBunny.onmessage = (e) => {
     channels.forEach((channelBuf, chIndex) => {
       const float32 = new Float32Array(channelBuf);
       audioBuffer.copyToChannel(float32, chIndex, writeOffset);
+
+      if (chIndex === 0) {
+        const renderArray = new Float32Array(float32); // clone for safe transfer
+        waveformWorker.postMessage(
+          {
+            type: "frame",
+            data: renderArray.buffer,
+            offset: writeOffset,
+          },
+          [renderArray.buffer]
+        );
+      }
     });
 
     writeOffset += numberOfFrames;

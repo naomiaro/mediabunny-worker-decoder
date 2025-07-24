@@ -131,6 +131,7 @@ self.onmessage = async (e) => {
 
     const duration = await input.computeDuration(); // => 1905.4615
     const audioTrack = await input.getPrimaryAudioTrack(); // => InputAudioTrack | null
+    console.log(audioTrack);
     const canDecode = await audioTrack.canDecode(); // => boolean
     console.log(`Can decode ${canDecode}`);
 
