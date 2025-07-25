@@ -80,7 +80,11 @@ workerBunny.onmessage = (e) => {
     // Append decoded frame
     channels.forEach((channelBuf, chIndex) => {
       const float32 = new Float32Array(channelBuf);
-      audioBuffer.copyToChannel(float32, chIndex, writeOffset);
+      if (writeOffset + numberOfFrames <= audioBuffer.length) {
+        audioBuffer.copyToChannel(float32, chIndex, writeOffset);
+      } else {
+        console.warn("AudioBuffer overflow — skipping frame");
+      }
     });
 
     writeOffset += numberOfFrames;
