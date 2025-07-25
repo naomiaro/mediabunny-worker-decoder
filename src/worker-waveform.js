@@ -3,6 +3,8 @@ let samplesPerPixel;
 let peaks;
 let devicePixelRatio = 1;
 
+const pixelSet = new Set();
+
 self.onmessage = (e) => {
   if (e.data.type === "init") {
     const { canvas, samplesPerPixel: spp, devicePixelRatio: dpr = 1 } = e.data;
@@ -30,9 +32,11 @@ function updatePeaks(samples, offset) {
   for (let i = 0; i < samples.length; i++) {
     const globalSampleIndex = offset + i;
 
-    // move left through array as frames roll in. compare to previously saved min, max
+    // move left -> right through array as frames roll in. compare to previously saved min, max
     const pixelX = Math.floor(globalSampleIndex / samplesPerPixel);
     if (pixelX >= peaks.length) continue;
+
+    pixelSet.add(pixelX);
 
     const [min, max] = peaks[pixelX];
     const s = samples[i];
@@ -42,15 +46,27 @@ function updatePeaks(samples, offset) {
 
 function drawWaveform() {
   const mid = height / 2;
-  ctx.clearRect(0, 0, width, height);
+  const pixelsToUpdate = [...pixelSet].sort((a, b) => a - b);
+  const pixelWidth = pixelsToUpdate.length;
+
+  if (pixelWidth === 0) {
+    return;
+  }
+
+  // clear only where pixels need to be updated.
+  ctx.clearRect(pixelsToUpdate[0], 0, pixelWidth, height);
   ctx.beginPath();
-  for (let x = 0; x < width; x++) {
-    const [min, max] = peaks[x];
-    ctx.moveTo(x, mid + min * mid);
-    ctx.lineTo(x, mid + max * mid);
+  for (let x = 0; x < pixelWidth; x++) {
+    const peakIndex = pixelsToUpdate[x];
+    const [min, max] = peaks[peakIndex];
+    ctx.moveTo(peakIndex, mid + min * mid);
+    ctx.lineTo(peakIndex, mid + max * mid);
   }
   ctx.strokeStyle = "#4e8";
   ctx.stroke();
+
+  // remove need to draw these pixels
+  pixelSet.clear();
 }
 
 let lastDraw = 0;
