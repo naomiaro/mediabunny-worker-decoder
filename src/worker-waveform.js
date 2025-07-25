@@ -21,6 +21,7 @@ self.onmessage = (e) => {
   }
 
   if (e.data.type === "frame") {
+    const startSample = e.data.offset;
     const channelBuffers = e.data.data.map((buf) => new Float32Array(buf));
 
     // Mix the channels down to mono for display
@@ -32,7 +33,7 @@ self.onmessage = (e) => {
       }
       samples[i] = sum / channelBuffers.length;
     }
-    const startSample = e.data.offset;
+
     updatePeaks(samples, startSample);
     maybeDrawWaveform();
   }
