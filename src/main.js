@@ -81,18 +81,6 @@ workerBunny.onmessage = (e) => {
     channels.forEach((channelBuf, chIndex) => {
       const float32 = new Float32Array(channelBuf);
       audioBuffer.copyToChannel(float32, chIndex, writeOffset);
-
-      if (chIndex === 0) {
-        const renderArray = new Float32Array(float32); // clone for safe transfer
-        waveformWorker.postMessage(
-          {
-            type: "frame",
-            data: renderArray.buffer,
-            offset: writeOffset,
-          },
-          [renderArray.buffer]
-        );
-      }
     });
 
     writeOffset += numberOfFrames;
@@ -105,6 +93,20 @@ workerBunny.onmessage = (e) => {
       stopBtn.disabled = false;
       isInitialised = true;
     }
+
+    // Send all channel data to waveformWorker for mono conversion
+    const allChannels = channels.map((buf) => new Float32Array(buf)); // clone
+    const transferBuffers = allChannels.map((arr) => arr.buffer); // save before detaching
+
+    waveformWorker.postMessage(
+      {
+        type: "frame",
+        data: transferBuffers,
+        offset: writeOffset,
+        numberOfChannels,
+      },
+      transferBuffers
+    );
 
     if (player.shouldRestartSoon(availableSeconds)) {
       const currentTime = player.getPlaybackPosition();
