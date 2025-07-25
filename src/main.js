@@ -27,7 +27,7 @@ let sampleRate = 48000;
 let numberOfChannels = 2;
 let expectedFrames = null;
 let availableSeconds = 0;
-let samplesPerPixel = 30000;
+let samplesPerPixel = 120000;
 
 // how much decoded audio to wait for
 const minStartSeconds = 0;
