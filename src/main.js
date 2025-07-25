@@ -27,6 +27,7 @@ let sampleRate = 48000;
 let numberOfChannels = 2;
 let expectedFrames = null;
 let availableSeconds = 0;
+let samplesPerPixel = 30000;
 
 // how much decoded audio to wait for
 const minStartSeconds = 0;
@@ -52,25 +53,13 @@ workerBunny.onmessage = (e) => {
 
     player.loadBuffer(audioBuffer);
 
-    const samplesPerPixel = 30000;
-    const ratio = window.devicePixelRatio || 1;
-    const canvasWidth = Math.ceil(expectedFrames / samplesPerPixel);
-    const canvasHeight = 80;
-
-    canvas.width = canvasWidth * ratio;
-    canvas.height = canvasHeight * ratio;
-    canvas.style.width = `${canvasWidth}px`;
-    canvas.style.height = `${canvasHeight}px`;
-
-    const offscreen = canvas.transferControlToOffscreen();
+    const config = setupCanvas(canvas, expectedFrames, samplesPerPixel);
     waveformWorker.postMessage(
       {
         type: "init",
-        canvas: offscreen,
-        devicePixelRatio: ratio,
-        samplesPerPixel,
+        ...config,
       },
-      [offscreen]
+      [config.canvas]
     );
   }
 
@@ -147,3 +136,20 @@ input.onchange = async (e) => {
   console.log(buffer);
   workerBunny.postMessage(buffer, [buffer]);
 };
+
+function setupCanvas(canvas, expectedFrames, samplesPerPixel) {
+  const ratio = window.devicePixelRatio || 1;
+  const width = Math.ceil(expectedFrames / samplesPerPixel);
+  const height = 80;
+
+  canvas.width = width * ratio;
+  canvas.height = height * ratio;
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+
+  return {
+    canvas: canvas.transferControlToOffscreen(),
+    devicePixelRatio,
+    samplesPerPixel,
+  };
+}
