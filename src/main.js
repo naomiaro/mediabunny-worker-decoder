@@ -88,18 +88,14 @@ workerBunny.onmessage = (e) => {
     }
 
     // Send all channel data to waveformWorker for mono conversion
-    const allChannels = channels.map((buf) => new Float32Array(buf)); // clone
-    const transferBuffers = allChannels.map((arr) => arr.buffer); // save before detaching
-
-    waveformWorker.postMessage(
-      {
-        type: "frame",
-        data: transferBuffers,
-        offset: writeOffset,
-        numberOfChannels,
-      },
-      transferBuffers
-    );
+    // This avoids cloning/transfer as worker just reads
+    const allChannels = channels.map((buf) => new Float32Array(buf));
+    waveformWorker.postMessage({
+      type: "frame",
+      data: allChannels,
+      offset: writeOffset,
+      numberOfChannels,
+    });
 
     if (player.shouldRestartSoon(availableSeconds)) {
       const currentTime = player.getPlaybackPosition();
