@@ -78,9 +78,6 @@ workerBunny.onmessage = (e) => {
 
     writeOffset += numberOfFrames;
 
-    // check if buffer might underun soon.
-    availableSeconds = writeOffset / sampleRate;
-
     if (!isInitialised) {
       playBtn.disabled = false;
       stopBtn.disabled = false;
@@ -97,6 +94,8 @@ workerBunny.onmessage = (e) => {
       numberOfChannels,
     });
 
+    // check if buffer might underun soon.
+    availableSeconds = writeOffset / sampleRate;
     if (player.shouldRestartSoon(availableSeconds)) {
       const currentTime = player.getPlaybackPosition();
 
